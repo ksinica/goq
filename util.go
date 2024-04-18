@@ -1,6 +1,9 @@
 package goq
 
-import "reflect"
+import (
+	"encoding"
+	"reflect"
+)
 
 // TypeDeref returns the underlying type if the given type is a pointer.
 func TypeDeref(t reflect.Type) reflect.Type {
@@ -12,7 +15,7 @@ func TypeDeref(t reflect.Type) reflect.Type {
 
 // indirect is stolen mostly from pkg/encoding/json/decode.go and removed some
 // cases (handling `null`) that goquery doesn't need to handle.
-func indirect(v reflect.Value) (Unmarshaler, reflect.Value) {
+func indirect(v reflect.Value) (Unmarshaler, encoding.TextUnmarshaler, reflect.Value) {
 	if v.Kind() != reflect.Ptr && v.Type().Name() != "" && v.CanAddr() {
 		v = v.Addr()
 	}
@@ -36,10 +39,13 @@ func indirect(v reflect.Value) (Unmarshaler, reflect.Value) {
 		}
 		if v.Type().NumMethod() > 0 {
 			if u, ok := v.Interface().(Unmarshaler); ok {
-				return u, reflect.Value{}
+				return u, nil, reflect.Value{}
+			}
+			if u, ok := v.Interface().(encoding.TextUnmarshaler); ok {
+				return nil, u, reflect.Value{}
 			}
 		}
 		v = v.Elem()
 	}
-	return nil, v
+	return nil, nil, v
 }

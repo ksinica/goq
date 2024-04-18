@@ -187,6 +187,10 @@ type Unmarshaler interface {
 
 Unmarshaler allows for custom implementations of unmarshaling logic
 
+#### encoding.TextUnmarshaler
+
+Custom unmarshaling from text is supported for types that implement `encoding.TextUnmarshaler` interface.
+
 ## TODO
 
 - Callable goquery methods with args, via reflection

@@ -1,6 +1,7 @@
 package goq
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -630,9 +631,27 @@ func (s *score) UnmarshalHTML(nodes []*html.Node) error {
 }
 
 type item struct {
-	Link   string `goquery:".title a,[href]"`
-	Site   string `goquery:".title .sitestr,text"`
-	Points score  `goquery:"!Next,.score,text"`
+	Link       string    `goquery:".title a,[href]"`
+	Site       string    `goquery:".title .sitestr,text"`
+	Points     score     `goquery:"!Next,.score,text"`
+	TextPoints textScore `goquery:"!Next,.score,text"`
+}
+
+type textScore int
+
+func (s *textScore) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		return nil
+	}
+
+	str := bytes.TrimSuffix(text, []byte("points"))
+	str = bytes.TrimSpace(str)
+	i, err := strconv.ParseInt(string(str), 10, 32)
+	if err != nil {
+		return err
+	}
+	*s = textScore(i)
+	return nil
 }
 
 func TestHNPage(t *testing.T) {
@@ -648,6 +667,7 @@ func TestHNPage(t *testing.T) {
 	asrt.Equal("http://crypto.stackexchange.com/questions/26336/sha512-faster-than-sha256", i.Link)
 	asrt.Equal("stackexchange.com", i.Site)
 	asrt.Equal(7, int(i.Points))
+	asrt.Equal(7, int(i.TextPoints))
 
 	var p2 pageNoPtr
 

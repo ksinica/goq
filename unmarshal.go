@@ -173,7 +173,7 @@ func UnmarshalSelection(s *goquery.Selection, iface interface{}) error {
 		return &CannotUnmarshalError{V: v, Reason: nilValue}
 	}
 
-	u, v := indirect(v)
+	u, _, v := indirect(v)
 
 	if u != nil {
 		return wrapUnmErr(u.UnmarshalHTML(s.Nodes), v)
@@ -183,10 +183,13 @@ func UnmarshalSelection(s *goquery.Selection, iface interface{}) error {
 }
 
 func unmarshalByType(s *goquery.Selection, v reflect.Value, tag goqueryTag) error {
-	u, v := indirect(v)
+	u, ut, v := indirect(v)
 
 	if u != nil {
 		return wrapUnmErr(u.UnmarshalHTML(s.Nodes), v)
+	}
+	if ut != nil {
+		return wrapUnmErr(ut.UnmarshalText([]byte(tag.valFunc()(s))), v)
 	}
 
 	// Handle special cases where we can just set the value directly
@@ -277,7 +280,7 @@ func unmarshalStruct(s *goquery.Selection, v reflect.Value) error {
 
 		// If tag is empty and the object doesn't implement Unmarshaler, skip
 		if tag == "" {
-			if u, _ := indirect(v.Field(i)); u == nil {
+			if u, ut, _ := indirect(v.Field(i)); u == nil && ut == nil {
 				continue
 			}
 		}
